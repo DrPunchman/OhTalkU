@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OhTalkU</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <header>
+    <h1>OhTalkU</h1>
+    <p class="sub">Speak English, post Japanese.</p>
+  </header>
+
+  <section aria-labelledby="gate-h">
+    <h2 id="gate-h">Noise gate</h2>
+    <canvas id="soundprint" height="110" aria-label="Live microphone level with gate threshold"></canvas>
+    <div class="row presets">
+      <button id="preset-low" type="button">Low noise</button>
+      <button id="preset-high" type="button">High noise</button>
+    </div>
+    <label class="row slider">
+      <span>Threshold</span>
+      <input id="threshold" type="range" min="0.001" max="0.100" step="0.001">
+      <output id="threshold-out">0.020</output>
+    </label>
+  </section>
+
+  <section aria-labelledby="emoji-h">
+    <h2 id="emoji-h">Emoji prefix</h2>
+    <div class="row">
+      <span id="emoji-current" class="emoji-current" aria-live="polite"></span>
+      <button id="emoji-change" type="button" aria-expanded="false" aria-controls="emoji-grid">Change emoji</button>
+      <button id="emoji-clear" type="button">Clear</button>
+    </div>
+    <div id="emoji-grid" class="emoji-grid" hidden></div>
+  </section>
+
+  <section aria-labelledby="chat-h">
+    <h2 id="chat-h">Chat target</h2>
+    <p id="chat-status" class="status"><span class="dot"></span><span id="chat-status-text">Looking for a chat box…</span></p>
+    <label class="field">
+      <span>Selector override</span>
+      <input id="selector" type="text" spellcheck="false" placeholder="Leave empty to autodetect">
+    </label>
+    <label class="field">
+      <span>I speak</span>
+      <select id="source-lang">
+        <option value="en-US">English (US)</option>
+        <option value="en-GB">English (UK)</option>
+        <option value="es-ES">Spanish</option>
+        <option value="fr-FR">French</option>
+        <option value="de-DE">German</option>
+        <option value="pt-BR">Portuguese (Brazil)</option>
+        <option value="ko-KR">Korean</option>
+        <option value="zh-CN">Chinese (Mandarin)</option>
+      </select>
+    </label>
+    <label class="check"><input id="auto-send" type="checkbox"> Send automatically (presses Enter)</label>
+  </section>
+
+  <section aria-labelledby="log-h">
+    <h2 id="log-h">Translation log</h2>
+    <p id="error" class="error" role="alert" hidden></p>
+    <ul id="log" class="log"><li class="empty">Turn the mic on and say something.</li></ul>
+  </section>
+
+  <footer>
+    <button id="mic" type="button" class="mic" aria-pressed="false">Mic off</button>
+  </footer>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
