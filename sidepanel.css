@@ -71,3 +71,6 @@ button:hover { border-color: var(--indigo); }
 footer { position: fixed; left: 0; right: 0; bottom: 0; padding: 10px 12px; background: var(--paper); border-top: 1px solid var(--line); }
 .mic { width: 100%; padding: 12px; font-size: 15px; font-weight: 650; }
 .mic[aria-pressed="true"] { background: var(--vermilion); border-color: var(--vermilion); color: #fff; }
+progress { width: 100%; height: 6px; margin: 0 0 8px; accent-color: var(--indigo); }
+.status.ready .dot { background: var(--ok); }
+.status.failed .dot { background: var(--vermilion); }

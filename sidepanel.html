@@ -9,7 +9,7 @@
 <body>
   <header>
     <h1>OhTalkU</h1>
-    <p class="sub">Speak English, post Japanese.</p>
+    <p class="sub">Speak your language, post Japanese.</p>
   </header>
 
   <section aria-labelledby="gate-h">
@@ -56,6 +56,15 @@
         <option value="zh-CN">Chinese (Mandarin)</option>
       </select>
     </label>
+    <label class="field">
+      <span>Speech model</span>
+      <select id="model">
+        <option value="Xenova/whisper-tiny">Fast (about 40 MB)</option>
+        <option value="Xenova/whisper-base">More accurate (about 80 MB)</option>
+      </select>
+    </label>
+    <p id="model-status" class="status" hidden><span class="dot"></span><span id="model-status-text"></span></p>
+    <progress id="model-progress" max="1" value="0" hidden></progress>
     <label class="check"><input id="auto-send" type="checkbox"> Send automatically (presses Enter)</label>
   </section>
 

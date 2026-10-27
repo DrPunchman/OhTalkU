@@ -3,7 +3,7 @@
 const $ = (id) => document.getElementById(id);
 const EMOJIS = ['🤖','💬','💭','🎮','🎙️','💩','👽','🤬','🤓','👺','🦊','🐶','🐱','🐭','🐹','🐰','🐨','🐯','🦁','🐮','🐷','🐻','🐸','🦄','🗿','💀','🍻'];
 const MAX_LEVEL = 0.1;      // top of the visualizer scale (matches slider max)
-const HISTORY = 300;        // samples kept on screen (~5s at 60 fps)
+const HISTORY = 300;        // gate frames kept on screen (~10 s at 31 frames/s)
 
 const state = { threshold: 0.02, emoji: '🤖', micOn: false };
 const levels = new Array(HISTORY).fill(0);
@@ -46,7 +46,10 @@ function draw() {
 function connectLevels() {
   if (port) return;
   port = chrome.runtime.connect({ name: 'levels' });
-  port.onMessage.addListener((m) => { levels.push(m.rms); levels.shift(); });
+  port.onMessage.addListener((m) => {
+    if (m.type === 'model') return showModel(m);
+    levels.push(m.rms); levels.shift();
+  });
   port.onDisconnect.addListener(() => { port = null; });
 }
 function disconnectLevels() {
@@ -94,6 +97,7 @@ $('source-lang').addEventListener('change', (e) => {
   save({ sourceLanguage: e.target.value });
   chrome.runtime.sendMessage({ target: 'offscreen', type: 'language', value: e.target.value }).catch(() => {});
 });
+$('model').addEventListener('change', (e) => save({ whisperModel: e.target.value }));
 $('auto-send').addEventListener('change', (e) => save({ autoSend: e.target.checked }));
 
 function setTargetStatus(found, text) {
@@ -123,6 +127,26 @@ async function pollTarget() {
 }
 setInterval(pollTarget, 2000);
 chrome.tabs.onActivated.addListener(pollTarget);
+
+/* ---------- model status ---------- */
+function showModel(m) {
+  const status = $('model-status'), bar = $('model-progress');
+  status.className = 'status';
+  status.hidden = m.state === 'idle';
+  bar.hidden = m.state !== 'loading';
+  if (m.state === 'loading') {
+    bar.value = m.progress || 0;
+    $('model-status-text').textContent = m.progress
+      ? 'Downloading speech model… ' + Math.round(m.progress * 100) + '% (first run only)'
+      : 'Loading speech model…';
+  } else if (m.state === 'ready') {
+    status.classList.add('ready');
+    $('model-status-text').textContent = 'Speech model ready (runs on this device)';
+  } else if (m.state === 'error') {
+    status.classList.add('failed');
+    $('model-status-text').textContent = 'Speech model failed to load';
+  }
+}
 
 /* ---------- log & errors ---------- */
 function showError(msg) { $('error').textContent = msg; $('error').hidden = !msg; }
@@ -188,13 +212,14 @@ $('mic').addEventListener('click', async () => {
 (async function init() {
   const cfg = await chrome.storage.local.get({
     noiseThreshold: 0.02, selectedEmoji: '🤖', customSelector: '',
-    sourceLanguage: 'en-US', autoSend: false, micOn: false
+    sourceLanguage: 'en-US', autoSend: false, whisperModel: 'Xenova/whisper-tiny', micOn: false
   });
   setThreshold(cfg.noiseThreshold, false);
   setEmoji(cfg.selectedEmoji);
   $('selector').value = cfg.customSelector;
   $('source-lang').value = cfg.sourceLanguage;
   $('auto-send').checked = cfg.autoSend;
+  $('model').value = cfg.whisperModel;
   const ctxs = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] });
   if (cfg.micOn && ctxs.length) { setMic(true); connectLevels(); } else { setMic(false); }
   pollTarget();

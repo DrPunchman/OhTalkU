@@ -1,7 +1,7 @@
 /**
  * OhTalkU background service worker.
  * - Opens the side panel when the toolbar icon is clicked.
- * - Creates/destroys the offscreen document that owns the mic.
+ * - Creates/destroys the offscreen document that owns the mic and runs Whisper.
  * - Translates final transcripts and hands them to the content script.
  */
 
@@ -12,6 +12,7 @@ const DEFAULTS = {
   sourceLanguage: 'en-US',
   targetLanguage: 'ja',
   autoSend: false,
+  whisperModel: 'Xenova/whisper-tiny',
   micOn: false
 };
 
@@ -32,7 +33,7 @@ async function ensureOffscreen() {
   await chrome.offscreen.createDocument({
     url: 'offscreen.html',
     reasons: ['USER_MEDIA'],
-    justification: 'Continuous microphone capture, noise gate and speech recognition.'
+    justification: 'Continuous microphone capture, noise gate and on-device speech recognition.'
   });
 }
 
@@ -82,7 +83,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           const cfg = await chrome.storage.local.get(DEFAULTS);
           await chrome.runtime.sendMessage({
             target: 'offscreen', type: 'start',
-            threshold: cfg.noiseThreshold, lang: cfg.sourceLanguage
+            threshold: cfg.noiseThreshold, lang: cfg.sourceLanguage, model: cfg.whisperModel
           });
           await chrome.storage.local.set({ micOn: true });
           sendResponse({ ok: true });
