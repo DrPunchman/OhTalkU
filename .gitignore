@@ -1,0 +1,28 @@
+# OS / System metadata clutter
+._*
+.DS_Store
+.DS_Store?
+.spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# luarocks build files
+*.src.rock
+*.zip
+*.tar.gz
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
