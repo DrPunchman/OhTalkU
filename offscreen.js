@@ -15,10 +15,6 @@ const TAIL_FRAMES = 4;            // quiet frames kept at the end
 const MIN_SPEECH_FRAMES = 6;      // ~190 ms of loud audio needed to bother transcribing
 const MAX_FRAMES = 450;           // ~14 s hard cap per utterance
 
-const LANG_NAMES = {
-  en: 'english', es: 'spanish', fr: 'french', de: 'german',
-  pt: 'portuguese', ko: 'korean', zh: 'chinese'
-};
 const HALLUCINATIONS = /^(\.+|you|thank you\.?|thanks for watching\.?|bye\.?|\[.*\]|\(.*\))$/i;
 
 let threshold = 0.02;
@@ -127,7 +123,8 @@ function finishUtterance() {
   const keep = u.frames.length - Math.max(u.quiet - TAIL_FRAMES, 0);
   const audio = new Float32Array(keep * FRAME);
   for (let i = 0; i < keep; i++) audio.set(u.frames[i], i * FRAME);
-  const language = LANG_NAMES[lang.split('-')[0]] || 'english';
+  const entry = LANGUAGES.find((l) => l.code === lang.split('-')[0] && l.speak);
+  const language = entry ? entry.whisper : 'english';
   worker.postMessage({ type: 'transcribe', id: nextId++, audio, language }, [audio.buffer]);
 }
 

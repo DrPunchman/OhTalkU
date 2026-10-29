@@ -1,11 +1,11 @@
 /** OhTalkU side panel: settings, visualizer, status and log. */
 
 const $ = (id) => document.getElementById(id);
-const EMOJIS = ['🤖','💬','💭','🎮','🎙️','💩','👽','🤬','🤓','👺','🦊','🐶','🐱','🐭','🐹','🐰','🐨','🐯','🦁','🐮','🐷','🐻','🐸','🦄','🗿','💀','🍻'];
+const EMOJIS = ['🤖','💬','💭','🎮','🎙️','💩','👽','🤬','🤓','👺','🦊','🐶','🐱','🐭','🐹','🐰','🐨','🐯','🦁','🐮','🐷','🐻','🐸','🦄','🗿','💀','🍻','🤘'];
 const MAX_LEVEL = 0.1;      // top of the visualizer scale (matches slider max)
 const HISTORY = 300;        // gate frames kept on screen (~10 s at 31 frames/s)
 
-const state = { threshold: 0.02, emoji: '🤖', micOn: false };
+const state = { threshold: 0.02, emoji: '🤖', micOn: false, source: 'en' };
 const levels = new Array(HISTORY).fill(0);
 let port = null;
 
@@ -67,13 +67,11 @@ function setThreshold(v, persist = true) {
   if (persist) save({ noiseThreshold: state.threshold });
 }
 $('threshold').addEventListener('input', (e) => setThreshold(parseFloat(e.target.value)));
-$('preset-low').addEventListener('click', () => setThreshold(0.005));
-$('preset-high').addEventListener('click', () => setThreshold(0.035));
 
 /* ---------- emoji ---------- */
 function setEmoji(e) {
   state.emoji = e;
-  $('emoji-current').textContent = e || '∅';
+  $('emoji-current').textContent = e || '–';
   $('emoji-current').title = e ? 'Current prefix' : 'No prefix';
   save({ selectedEmoji: e });
 }
@@ -91,13 +89,97 @@ function toggleGrid(open) {
 $('emoji-change').addEventListener('click', () => toggleGrid(grid.hidden));
 $('emoji-clear').addEventListener('click', () => { setEmoji(''); toggleGrid(false); });
 
+/* ---------- language pickers (flags need a custom listbox; <select> can't show images) ---------- */
+function createPicker(root, labelId, items, value, onChange) {
+  let current = items.find((i) => i.code === value) || items[0];
+  let active = 0;
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.id = labelId + '-btn';
+  btn.setAttribute('aria-haspopup', 'listbox');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.setAttribute('aria-labelledby', labelId + ' ' + btn.id);
+  const list = document.createElement('ul');
+  list.setAttribute('role', 'listbox'); list.setAttribute('aria-labelledby', labelId);
+  list.tabIndex = -1; list.hidden = true;
+
+  const flagImg = (it) => { const i = document.createElement('img'); i.className = 'flag'; i.src = it.flag; i.alt = ''; return i; };
+  const lis = items.map((it, idx) => {
+    const li = document.createElement('li');
+    li.setAttribute('role', 'option'); li.id = labelId + '-opt-' + idx;
+    li.append(flagImg(it), Object.assign(document.createElement('span'), { textContent: it.label }));
+    li.addEventListener('click', () => { choose(it); setOpen(false); btn.focus(); });
+    list.appendChild(li);
+    return li;
+  });
+
+  function paintButton() {
+    const name = Object.assign(document.createElement('span'), { className: 'name', textContent: current.label });
+    const caret = Object.assign(document.createElement('span'), { className: 'caret', textContent: '▼' });
+    caret.setAttribute('aria-hidden', 'true');
+    btn.replaceChildren(flagImg(current), name, caret);
+    lis.forEach((li, i) => li.setAttribute('aria-selected', String(items[i] === current)));
+  }
+  function highlight(i) {
+    active = (i + items.length) % items.length;
+    lis.forEach((li, k) => li.classList.toggle('active', k === active));
+    list.setAttribute('aria-activedescendant', lis[active].id);
+    lis[active].scrollIntoView({ block: 'nearest' });
+  }
+  function setOpen(o) {
+    list.hidden = !o;
+    btn.setAttribute('aria-expanded', String(o));
+    if (o) { highlight(items.indexOf(current)); list.focus(); }
+  }
+  function choose(it) {
+    const changed = it !== current;
+    current = it; paintButton();
+    if (changed) onChange(it.code);
+  }
+
+  btn.addEventListener('click', () => setOpen(list.hidden));
+  btn.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); setOpen(true); }
+  });
+  list.addEventListener('keydown', (e) => {
+    const keys = {
+      ArrowDown: () => highlight(active + 1), ArrowUp: () => highlight(active - 1),
+      Home: () => highlight(0), End: () => highlight(items.length - 1),
+      Enter: () => { choose(items[active]); setOpen(false); btn.focus(); },
+      ' ': () => { choose(items[active]); setOpen(false); btn.focus(); },
+      Escape: () => { setOpen(false); btn.focus(); },
+      Tab: () => setOpen(false)
+    };
+    if (keys[e.key]) { if (e.key !== 'Tab') e.preventDefault(); keys[e.key](); }
+  });
+  document.addEventListener('click', (e) => { if (!root.contains(e.target)) setOpen(false); });
+
+  paintButton();
+  root.append(btn, list);
+}
+
+function updateModelHint() {
+  $('model-hint').hidden = !(state.source !== 'en' && $('model').value === 'Xenova/whisper-tiny');
+}
+
+/* ---------- show/hide sections ---------- */
+function setupCollapse(toggleId, bodyId, key, open) {
+  const btn = $(toggleId), body = $(bodyId);
+  const apply = (o) => {
+    body.hidden = !o;
+    btn.textContent = o ? 'Hide' : 'Show';
+    btn.setAttribute('aria-expanded', String(o));
+  };
+  apply(open);
+  btn.addEventListener('click', () => {
+    const o = body.hidden;
+    apply(o);
+    save({ [key]: o });
+  });
+}
+
 /* ---------- chat target ---------- */
 $('selector').addEventListener('change', (e) => { save({ customSelector: e.target.value.trim() }); pollTarget(); });
-$('source-lang').addEventListener('change', (e) => {
-  save({ sourceLanguage: e.target.value });
-  chrome.runtime.sendMessage({ target: 'offscreen', type: 'language', value: e.target.value }).catch(() => {});
-});
-$('model').addEventListener('change', (e) => save({ whisperModel: e.target.value }));
+$('model').addEventListener('change', (e) => { save({ whisperModel: e.target.value }); updateModelHint(); });
 $('auto-send').addEventListener('change', (e) => save({ autoSend: e.target.checked }));
 
 function setTargetStatus(found, text) {
@@ -212,14 +294,28 @@ $('mic').addEventListener('click', async () => {
 (async function init() {
   const cfg = await chrome.storage.local.get({
     noiseThreshold: 0.02, selectedEmoji: '🤖', customSelector: '',
-    sourceLanguage: 'en-US', autoSend: false, whisperModel: 'Xenova/whisper-tiny', micOn: false
+    sourceLanguage: 'en-US', autoSend: false, whisperModel: 'Xenova/whisper-tiny', micOn: false, targetLanguage: 'ja',
+    emojiOpen: true, chatOpen: true
   });
   setThreshold(cfg.noiseThreshold, false);
   setEmoji(cfg.selectedEmoji);
   $('selector').value = cfg.customSelector;
-  $('source-lang').value = cfg.sourceLanguage;
   $('auto-send').checked = cfg.autoSend;
   $('model').value = cfg.whisperModel;
+  const speakItems = LANGUAGES.filter((l) => l.speak);
+  const source = speakItems.find((l) => l.code === String(cfg.sourceLanguage).split('-')[0]) ? String(cfg.sourceLanguage).split('-')[0] : 'en';
+  const target = LANGUAGES.find((l) => l.code === cfg.targetLanguage) ? cfg.targetLanguage : 'ja';
+  state.source = source;
+  createPicker($('speak-picker'), 'speak-lbl', speakItems, source, (code) => {
+    state.source = code;
+    save({ sourceLanguage: code });
+    chrome.runtime.sendMessage({ target: 'offscreen', type: 'language', value: code }).catch(() => {});
+    updateModelHint();
+  });
+  createPicker($('post-picker'), 'post-lbl', LANGUAGES, target, (code) => save({ targetLanguage: code }));
+  updateModelHint();
+  setupCollapse('emoji-toggle', 'emoji-body', 'emojiOpen', cfg.emojiOpen);
+  setupCollapse('chat-toggle', 'chat-body', 'chatOpen', cfg.chatOpen);
   const ctxs = await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] });
   if (cfg.micOn && ctxs.length) { setMic(true); connectLevels(); } else { setMic(false); }
   pollTarget();

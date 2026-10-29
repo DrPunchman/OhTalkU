@@ -1,3 +1,5 @@
+importScripts('languages.js');
+
 /**
  * OhTalkU background service worker.
  * - Opens the side panel when the toolbar icon is clicked.
@@ -9,7 +11,7 @@ const DEFAULTS = {
   noiseThreshold: 0.02,
   selectedEmoji: '🤖',
   customSelector: '',
-  sourceLanguage: 'en-US',
+  sourceLanguage: 'en',
   targetLanguage: 'ja',
   autoSend: false,
   whisperModel: 'Xenova/whisper-tiny',
@@ -37,10 +39,10 @@ async function ensureOffscreen() {
   });
 }
 
-async function translate(text, target) {
+async function translate(text, source, target) {
   const url =
-    'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=' +
-    encodeURIComponent(target) + '&dt=t&q=' + encodeURIComponent(text);
+    'https://translate.googleapis.com/translate_a/single?client=gtx&sl=' +
+    encodeURIComponent(source) + '&tl=' + encodeURIComponent(target) + '&dt=t&q=' + encodeURIComponent(text);
   const res = await fetch(url);
   if (!res.ok) throw new Error('Translate HTTP ' + res.status);
   const data = await res.json();
@@ -63,7 +65,10 @@ async function sendToActiveTab(message) {
 async function handleTranscript(text) {
   const cfg = await chrome.storage.local.get(DEFAULTS);
   try {
-    const translated = await translate(text, cfg.targetLanguage);
+    const src = LANGUAGES.find((l) => l.code === String(cfg.sourceLanguage).split('-')[0]) || LANGUAGES[0];
+    const tgt = LANGUAGES.find((l) => l.code === cfg.targetLanguage) || LANGUAGES.find((l) => l.code === 'ja');
+    // Same language on both sides: post what was said, no translation needed.
+    const translated = src.code === tgt.code ? text : await translate(text, src.gt, tgt.gt);
     const output = cfg.selectedEmoji ? `${cfg.selectedEmoji} ${translated}` : translated;
     const result = await sendToActiveTab({ type: 'inject', text: output, autoSend: cfg.autoSend });
     chrome.runtime.sendMessage({

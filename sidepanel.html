@@ -12,60 +12,20 @@
     <p class="sub">Speak your language, post Japanese.</p>
   </header>
 
+  <section class="langs" aria-label="Languages">
+    <div class="lang"><span class="lbl" id="speak-lbl">I speak</span><div class="picker" id="speak-picker"></div></div>
+    <span class="arrow" aria-hidden="true">→</span>
+    <div class="lang"><span class="lbl" id="post-lbl">Post in</span><div class="picker" id="post-picker"></div></div>
+  </section>
+
   <section aria-labelledby="gate-h">
     <h2 id="gate-h">Noise gate</h2>
     <canvas id="soundprint" height="110" aria-label="Live microphone level with gate threshold"></canvas>
-    <div class="row presets">
-      <button id="preset-low" type="button">Low noise</button>
-      <button id="preset-high" type="button">High noise</button>
-    </div>
     <label class="row slider">
       <span>Threshold</span>
       <input id="threshold" type="range" min="0.001" max="0.100" step="0.001">
       <output id="threshold-out">0.020</output>
     </label>
-  </section>
-
-  <section aria-labelledby="emoji-h">
-    <h2 id="emoji-h">Emoji prefix</h2>
-    <div class="row">
-      <span id="emoji-current" class="emoji-current" aria-live="polite"></span>
-      <button id="emoji-change" type="button" aria-expanded="false" aria-controls="emoji-grid">Change emoji</button>
-      <button id="emoji-clear" type="button">Clear</button>
-    </div>
-    <div id="emoji-grid" class="emoji-grid" hidden></div>
-  </section>
-
-  <section aria-labelledby="chat-h">
-    <h2 id="chat-h">Chat target</h2>
-    <p id="chat-status" class="status"><span class="dot"></span><span id="chat-status-text">Looking for a chat box…</span></p>
-    <label class="field">
-      <span>Selector override</span>
-      <input id="selector" type="text" spellcheck="false" placeholder="Leave empty to autodetect">
-    </label>
-    <label class="field">
-      <span>I speak</span>
-      <select id="source-lang">
-        <option value="en-US">English (US)</option>
-        <option value="en-GB">English (UK)</option>
-        <option value="es-ES">Spanish</option>
-        <option value="fr-FR">French</option>
-        <option value="de-DE">German</option>
-        <option value="pt-BR">Portuguese (Brazil)</option>
-        <option value="ko-KR">Korean</option>
-        <option value="zh-CN">Chinese (Mandarin)</option>
-      </select>
-    </label>
-    <label class="field">
-      <span>Speech model</span>
-      <select id="model">
-        <option value="Xenova/whisper-tiny">Fast (about 40 MB)</option>
-        <option value="Xenova/whisper-base">More accurate (about 80 MB)</option>
-      </select>
-    </label>
-    <p id="model-status" class="status" hidden><span class="dot"></span><span id="model-status-text"></span></p>
-    <progress id="model-progress" max="1" value="0" hidden></progress>
-    <label class="check"><input id="auto-send" type="checkbox"> Send automatically (presses Enter)</label>
   </section>
 
   <section aria-labelledby="log-h">
@@ -74,10 +34,63 @@
     <ul id="log" class="log"><li class="empty">Turn the mic on and say something.</li></ul>
   </section>
 
+  <section aria-labelledby="emoji-h">
+    <div class="head">
+      <h2 id="emoji-h">Emoji prefix</h2>
+      <button id="emoji-toggle" type="button" class="toggle" aria-expanded="true" aria-controls="emoji-body">Hide</button>
+    </div>
+    <div id="emoji-body">
+      <div class="row">
+        <span id="emoji-current" class="emoji-current" aria-live="polite"></span>
+        <button id="emoji-change" type="button" aria-expanded="false" aria-controls="emoji-grid">Change emoji</button>
+        <button id="emoji-clear" type="button">Clear</button>
+      </div>
+      <div id="emoji-grid" class="emoji-grid" hidden></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="chat-h">
+    <div class="head">
+      <h2 id="chat-h">Chat target</h2>
+      <button id="chat-toggle" type="button" class="toggle" aria-expanded="true" aria-controls="chat-body">Hide</button>
+    </div>
+    <div id="chat-body">
+      <p id="chat-status" class="status"><span class="dot"></span><span id="chat-status-text">Looking for a chat box…</span></p>
+      <label class="field">
+        <span>Selector override</span>
+        <input id="selector" type="text" spellcheck="false" placeholder="Leave empty to autodetect">
+      </label>
+    <label class="field">
+      <span>Speech model</span>
+      <select id="model">
+        <option value="Xenova/whisper-tiny">Fast (about 40 MB)</option>
+        <option value="Xenova/whisper-base">More accurate (about 80 MB)</option>
+      </select>
+    </label>
+    <p id="model-hint" class="hint" hidden>Tip: the more accurate model understands non-English speech much better.</p>
+    <p id="model-status" class="status" hidden><span class="dot"></span><span id="model-status-text"></span></p>
+    <progress id="model-progress" max="1" value="0" hidden></progress>
+      <label class="check"><input id="auto-send" type="checkbox"> Send automatically (presses Enter)</label>
+    </div>
+  </section>
+
+  <nav class="links" aria-label="OhTalkU information">
+    <a href="https://pie.coffee/terms-of-service/" target="_blank" rel="noopener noreferrer">ToS</a>
+    <span aria-hidden="true">|</span>
+    <a href="https://pie.coffee/frequently-asked-questions/" target="_blank" rel="noopener noreferrer">FAQ</a>
+    <span aria-hidden="true">|</span>
+    <a href="https://pie.coffee/privacy-policy/" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+    <span aria-hidden="true">|</span>
+    <a href="https://pie.coffee/" target="_blank" rel="noopener noreferrer">P&amp;C</a>
+    <span aria-hidden="true">|</span>
+    <a href="https://buymeacoffee.com/pievscoffee" target="_blank" rel="noopener noreferrer">☕ Tips</a>
+  </nav>
+
   <footer>
     <button id="mic" type="button" class="mic" aria-pressed="false">Mic off</button>
   </footer>
 
+  <script src="languages.js"></script>
   <script src="sidepanel.js"></script>
 </body>
 </html>
